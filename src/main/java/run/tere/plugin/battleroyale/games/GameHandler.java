@@ -17,7 +17,9 @@ import run.tere.plugin.battleroyale.guns.ammos.AmmoHandler;
 import run.tere.plugin.battleroyale.itemspawns.ItemSpawnHandler;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.function.Supplier;
 
 public class GameHandler {
@@ -41,7 +43,7 @@ public class GameHandler {
         prepareGame();
     }
 
-    public void prepareGame() {
+    private void prepareGame() {
         Team team = prepareTeam();
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.getInventory().clear();
