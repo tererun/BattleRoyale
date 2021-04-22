@@ -16,7 +16,7 @@ public class HealthUtils {
         if (calcedHealth < 0) {
             calcedHealth = 0;
         }
-        if (calcedHealth <= 0) {
+        if (calcedHealth == 0) {
             if (player instanceof Player) {
                 Player p = (Player) player;
                 p.setHealth(20);
