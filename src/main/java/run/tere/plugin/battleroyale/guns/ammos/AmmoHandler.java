@@ -26,7 +26,7 @@ public class AmmoHandler extends TimerTask {
     @Override
     public void run() {
         if (ammos.isEmpty()) return;
-        for (Ammo ammo : this.ammos) {
+        for (Ammo ammo : ammos) {
             if (ammo.getNowTurn() % ammo.getAmmoSpeed() != 0) {
                 if (ammo.getNowTurn() >= ammo.getAmmoSpeed()) {
                     ammo.setNowTurn(0);
@@ -45,10 +45,12 @@ public class AmmoHandler extends TimerTask {
             Location nowLocation = ammo.getNowLocation();
             Vector direction = nowLocation.getDirection();
             double gravity = 0;
-
             ammo.addNowTurn(1);
             if (spawnLocation.distance(nowLocation) >= flyingDistance) {
-                if (fallingStartLocation == null) fallingStartLocation = nowLocation.clone();
+                if (fallingStartLocation == null) {
+                    ammo.setFallingStartLocation(nowLocation.clone());
+                    fallingStartLocation = nowLocation.clone();
+                }
                 gravity = -0.01 * fallingStartLocation.distance(nowLocation);
             }
             nowLocation.add(direction.getX() / 7.5, direction.getY() / 7.5 + gravity, direction.getZ() / 7.5);
@@ -57,7 +59,7 @@ public class AmmoHandler extends TimerTask {
             if (nowBlockType.isSolid()) {
                 nowLocation.getWorld().spawnParticle(Particle.BLOCK_DUST, nowLocation, 50, 0, 0, 0, 0, nowBlockType.createBlockData());
                 nowLocation.getWorld().playSound(nowLocation, nowBlockType.createBlockData().getSoundGroup().getBreakSound(), 1F, 1F);
-                removeAmmo(ammo);
+                ammos.remove(ammo);
                 return;
             }
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -98,7 +100,7 @@ public class AmmoHandler extends TimerTask {
                             }
                         }
                     }.runTask(BattleRoyale.getPlugin());
-                    removeAmmo(ammo);
+                    ammos.remove(ammo);
                     return;
                 }
             }
@@ -107,10 +109,6 @@ public class AmmoHandler extends TimerTask {
 
     public void addAmmo(Ammo ammo) {
         this.ammos.add(ammo);
-    }
-
-    public void removeAmmo(Ammo ammo) {
-        this.ammos.remove(ammo);
     }
 
     public List<Ammo> getAmmos() {

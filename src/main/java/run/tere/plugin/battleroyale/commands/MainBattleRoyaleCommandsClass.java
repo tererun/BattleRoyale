@@ -15,10 +15,12 @@ import run.tere.plugin.battleroyale.apis.AmmoUtils;
 import run.tere.plugin.battleroyale.apis.GunUtils;
 import run.tere.plugin.battleroyale.areas.AreaHandler;
 import run.tere.plugin.battleroyale.guns.Gun;
+import run.tere.plugin.battleroyale.guns.ammos.Ammo;
 import run.tere.plugin.battleroyale.guns.ammos.AmmoType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class MainBattleRoyaleCommandsClass implements CommandExecutor {
     @Override
@@ -63,6 +65,11 @@ public class MainBattleRoyaleCommandsClass implements CommandExecutor {
                 itemStack.setItemMeta(itemMeta);
                 itemStack = NBTEditor.set(itemStack, "Item", "SpawnTriggerItem");
                 player.getInventory().addItem(itemStack);
+            } else if (args[0].equalsIgnoreCase("removeammo")) {
+                List<Ammo> ammoList = BattleRoyale.getGameHandler().getAmmoHandler().getAmmos();
+                for (Ammo ammo : ammoList) {
+                    ammoList.remove(ammo);
+                }
             }
         }
         return false;

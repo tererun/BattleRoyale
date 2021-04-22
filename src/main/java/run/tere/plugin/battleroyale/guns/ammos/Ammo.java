@@ -104,4 +104,8 @@ public class Ammo {
     public long getAmmoSpeed() {
         return ammoSpeed;
     }
+
+    public void setFallingStartLocation(Location fallingStartLocation) {
+        this.fallingStartLocation = fallingStartLocation;
+    }
 }
