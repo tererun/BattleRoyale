@@ -1,0 +1,9 @@
+name: BattleRoyale
+version: ${project.version}
+main: run.tere.plugin.battleroyale.BattleRoyale
+api-version: 1.16
+authors: [ tererun ]
+description: BattleRoyale
+commands:
+  battleroyale:
+    description: battleroyale command
