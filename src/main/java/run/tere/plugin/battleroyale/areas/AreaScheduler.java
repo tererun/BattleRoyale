@@ -12,23 +12,39 @@ public class AreaScheduler extends BukkitRunnable {
 
     @Override
     public void run() {
+        time++;
         if (time == 30) {
             BattleRoyale.getGameHandler().getAreaHandler().move(800, 120L);
-        } else if (time == 210) {
+            return;
+        }
+
+        if (time == 210) {
             BattleRoyale.getGameHandler().getAreaHandler().move(400, 60L);
-        } else if (time == 300) {
+            return;
+        }
+
+        if (time == 300) {
             BattleRoyale.getGameHandler().getAreaHandler().move(200, 60L);
-        } else if (time == 390) {
+            return;
+        }
+
+        if (time == 390) {
             BattleRoyale.getGameHandler().getAreaHandler().move(80, 60L);
-        } else if (time == 480) {
+            return;
+        }
+
+        if (time == 480) {
             BattleRoyale.getGameHandler().getAreaHandler().move(20, 60L);
-        } else if (time == 570) {
+            return;
+        }
+
+        if (time == 570) {
             BattleRoyale.getGameHandler().getAreaHandler().move(1, 60L);
+            return;
         }
         if (time >= 640) {
             this.cancel();
             return;
         }
-        time++;
     }
 }
