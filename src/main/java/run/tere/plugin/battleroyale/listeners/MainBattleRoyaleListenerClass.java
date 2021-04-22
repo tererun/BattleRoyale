@@ -85,12 +85,6 @@ public class MainBattleRoyaleListenerClass implements Listener {
         if (e.getTo() == null) return;
         if ((player.isOnGround()) && (chestPlate != null) && (chestPlate.getType().equals(Material.ELYTRA))) {
             player.getInventory().setChestplate(new ItemStack(Material.AIR));
-            /*
-            player.getInventory().addItem(GunUtils.getGunStack(BattleRoyale.getGameHandler().getGunHandler().getGunList().getGuns().get(0)));
-            for (int i=0; i<26; i++) {
-                player.getInventory().addItem(AmmoUtils.getAmmoStack(AmmoType.IRON_AMMO, 64));
-            }
-             */
             player.getInventory().setItem(8, new ItemStack(Material.COOKED_BEEF, 64));
             player.getInventory().setItem(7, new ItemStack(Material.COMPASS, 1));
             player.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
@@ -173,41 +167,6 @@ public class MainBattleRoyaleListenerClass implements Listener {
             }
         }
         return null;
-
-
-        /*
-        RayTraceResult rayTraceResult = player.getWorld().rayTraceEntities(player.getLocation(), player.getLocation().getDirection(), 5);
-        System.out.println(rayTraceResult);
-        if (rayTraceResult == null) return null;
-        if (rayTraceResult.getHitEntity() == null) return null;
-        return rayTraceResult.getHitEntity();
-        */
-        /*
-        Location eye = player.getEyeLocation();
-        for (Entity entity : player.getNearbyEntities(5, 5, 5)) {
-            if (!entity.getType().equals(EntityType.ARMOR_STAND)) continue;
-            ArmorStand armorStand = (ArmorStand) entity;
-            Vector toEntity = armorStand.getEyeLocation().toVector().subtract(eye.toVector());
-            double dot = toEntity.normalize().dot(eye.getDirection());
-            if (dot > 0.99D) {
-                return entity;
-            }
-        }
-        return null;
-         */
-        //return player.getTargetEntity(5);
-        /*Location nowLocation = player.getLocation().clone();
-        Vector direction = player.getLocation().getDirection().clone();
-        for (int i=0; i<50; i++) {
-            nowLocation.add(direction.getX() / 10, direction.getY() / 10, direction.getZ() / 10);
-            if (nowLocation.getBlock().getType().isSolid()) {
-                return null;
-            }
-            for (Entity entity : player.getNearbyEntities(5, 5, 5)) {
-                if (entity.getLocation().distance(nowLocation) <= 0.9) return entity;
-            }
-        }
-        return null;*/
     }
 
     @EventHandler

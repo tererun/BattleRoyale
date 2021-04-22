@@ -42,15 +42,6 @@ public class AmmoUtils {
         }
         ItemStack ammoStack = getAmmoStack(ammoType, amount);
         inventory.addItem(ammoStack);
-        ItemStack indexStack = inventory.getItem(ignoreIndex);
-        /*
-        System.out.println(ignoreIndex);
-        if (indexStack != null) {
-            System.out.println(indexStack);
-            inventory.addItem(indexStack.clone());
-            inventory.setItem(ignoreIndex, new ItemStack(Material.AIR));
-        }
-         */
     }
 
     public static void addAmmoAmount(Inventory inventory, AmmoType ammoType, int amount, int ignoreIndex) {
