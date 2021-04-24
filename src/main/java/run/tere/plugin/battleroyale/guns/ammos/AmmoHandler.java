@@ -1,6 +1,7 @@
 package run.tere.plugin.battleroyale.guns.ammos;
 
 import org.bukkit.*;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -27,7 +28,7 @@ public class AmmoHandler extends TimerTask {
     public void run() {
         if (ammos.isEmpty()) return;
         for (Ammo ammo : ammos) {
-            if (ammo.getNowTurn() % ammo.getAmmoSpeed() != 0) {
+            if (ammo.getNowTurn() % ammo.getAmmoSpeed() < 1) {
                 if (ammo.getNowTurn() >= ammo.getAmmoSpeed()) {
                     ammo.setNowTurn(0);
                 } else {
@@ -64,42 +65,28 @@ public class AmmoHandler extends TimerTask {
             }
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (nowLocation.distance(player.getLocation()) >= 3) {
-                    //if (spawnLocation.distance(nowLocation) % 2 <= 0.15)
-                    nowLocation.getWorld().spawnParticle(Particle.CRIT, nowLocation, 1, 0, 0, 0, 0);
+                    if (spawnLocation.distance(nowLocation) % 2 <= 0.15) nowLocation.getWorld().spawnParticle(Particle.CRIT, nowLocation, 1, 0, 0, 0, 0);
                 }
             }
-            for (LivingEntity livingEntity : nowLocation.getWorld().getLivingEntities()) {
+
+            for (Player livingEntity : Bukkit.getOnlinePlayers()) {
                 if (livingEntity.getBoundingBox().contains(nowLocation.getX(), nowLocation.getY(), nowLocation.getZ())) {
                     OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            Player player = offlinePlayer.getPlayer();
-                            double headDistance = livingEntity.getLocation().clone().add(0, livingEntity.getEyeHeight(), 0).distance(nowLocation);
-                            double calcedDamage = damage;
-                            if (player != null) {
-                                player.playSound(player.getLocation(), Sound.BLOCK_WOODEN_BUTTON_CLICK_ON, 2F, 0.5F);
-                                if (livingEntity instanceof Player) {
-                                    Player livingPlayer = (Player) livingEntity;
-                                    GameMode gameMode = livingPlayer.getGameMode();
-                                    if ((gameMode.equals(GameMode.SURVIVAL)) || (gameMode.equals(GameMode.ADVENTURE))) {
-                                        if (headDistance <= 0.4) {
-                                            calcedDamage *= headShotDamageMagnification;
-                                            player.sendTitle("", "§7§oHeadshot!              ", 0, 10, 2);
-                                        }
-                                        HealthUtils.addHealth(livingEntity, -calcedDamage, gunName);
-                                        livingEntity.setLastDamageCause(new EntityDamageByEntityEvent(livingEntity, player, EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage));
-                                    }
-                                } else {
-                                    if (headDistance <= 0.4) {
-                                        calcedDamage *= headShotDamageMagnification;
-                                    }
-                                    HealthUtils.addHealth(livingEntity, -calcedDamage, gunName);
-                                    livingEntity.setLastDamageCause(new EntityDamageByEntityEvent(livingEntity, player, EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage));
-                                }
+                    Player player = offlinePlayer.getPlayer();
+                    double headDistance = livingEntity.getLocation().clone().add(0, livingEntity.getEyeHeight(), 0).distance(nowLocation);
+                    double calcedDamage = damage;
+                    if (player != null) {
+                        player.playSound(player.getLocation(), Sound.BLOCK_WOODEN_BUTTON_CLICK_ON, 2F, 0.5F);
+                        GameMode gameMode = livingEntity.getGameMode();
+                        if ((gameMode.equals(GameMode.SURVIVAL)) || (gameMode.equals(GameMode.ADVENTURE))) {
+                            if (headDistance <= 0.4) {
+                                calcedDamage *= headShotDamageMagnification;
+                                player.sendTitle("", "§7§oHeadshot!              ", 0, 10, 2);
                             }
+                            HealthUtils.addHealth(livingEntity, -calcedDamage, gunName);
+                            livingEntity.setLastDamageCause(new EntityDamageByEntityEvent(livingEntity, player, EntityDamageEvent.DamageCause.ENTITY_ATTACK, damage));
                         }
-                    }.runTask(BattleRoyale.getPlugin());
+                    }
                     ammos.remove(ammo);
                     return;
                 }

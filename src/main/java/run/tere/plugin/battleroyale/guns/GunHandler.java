@@ -122,7 +122,7 @@ public class GunHandler implements Listener {
             player.getWorld().playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.75F, 1F);
             return;
         }
-        new Ammo(player.getUniqueId(), gun.getGunName(), gun.getAmmoType(), gun.getDamage(), gun.getHeadShotDamageMagnification(), gun.getFlyingDistance(), player.getEyeLocation(), gun.getAmmoSpeed());
+        new Ammo(player.getUniqueId(), gun.getGunName(), gun.getAmmoType(), gun.getDamage(), gun.getHeadShotDamageMagnification(), gun.getFlyingDistance(), player.getEyeLocation().clone(), gun.getAmmoSpeed());
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 3.125F, 1F);
         float sideRecoil = gun.getSideRecoil();
         float verticalRecoil = -gun.getVerticalRecoil();

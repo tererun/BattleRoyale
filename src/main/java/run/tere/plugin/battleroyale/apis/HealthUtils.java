@@ -6,8 +6,11 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import run.tere.plugin.battleroyale.BattleRoyale;
+
+import java.util.ArrayList;
 
 public class HealthUtils {
     public static void setHealth(LivingEntity player, double health, String damageCause) {
@@ -18,29 +21,37 @@ public class HealthUtils {
         }
         if (calcedHealth == 0) {
             if (player instanceof Player) {
-                Player p = (Player) player;
-                p.setHealth(20);
-                p.setGameMode(GameMode.SPECTATOR);
-                p.getInventory().clear();
-                EntityDamageEvent entityDamageEvent = p.getLastDamageCause();
-                if (entityDamageEvent != null) {
-                    if (entityDamageEvent instanceof EntityDamageByEntityEvent) {
-                        EntityDamageByEntityEvent entityDamageByEntityEvent = (EntityDamageByEntityEvent) entityDamageEvent;
-                        Entity entity = entityDamageByEntityEvent.getEntity();
-                        p.sendTitle("§c§o撃破されました", "§7死因 " + entity.getName() + " による " + damageCause, 5, 60, 5);
-                        if (entity instanceof Player) {
-                            Player damagerPlayer = (Player) entity;
-                            damagerPlayer.playSound(damagerPlayer.getLocation(), Sound.BLOCK_ANVIL_PLACE, 1F, 2F);
-                            new BukkitRunnable() {
-                                @Override
-                                public void run() {
-                                    damagerPlayer.sendTitle("", "§7§o" + p.getName() + " を撃破!", 2, 20, 2);
-                                    Bukkit.broadcastMessage("§a" + damagerPlayer.getName() + " §fが §b" + damageCause + " §fを使用して §c" + p.getName() + " §fを撃破!");
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        Player p = (Player) player;
+                        p.setHealth(20);
+                        p.setGameMode(GameMode.SPECTATOR);
+                        p.getInventory().clear();
+                        EntityDamageEvent entityDamageEvent = p.getLastDamageCause();
+                        String deathMessage = "§c" + p.getName() + " §fが撃破されました!";
+                        if (entityDamageEvent != null) {
+                            if (entityDamageEvent instanceof EntityDamageByEntityEvent) {
+                                EntityDamageByEntityEvent entityDamageByEntityEvent = (EntityDamageByEntityEvent) entityDamageEvent;
+                                Entity entity = entityDamageByEntityEvent.getEntity();
+                                p.sendTitle("§c§o撃破されました", "§7死因 " + entity.getName() + " による " + damageCause, 5, 60, 5);
+                                if (entity instanceof Player) {
+                                    Player damagerPlayer = (Player) entity;
+                                    damagerPlayer.playSound(damagerPlayer.getLocation(), Sound.BLOCK_ANVIL_PLACE, 1F, 2F);
+                                    deathMessage = "§a" + damagerPlayer.getName() + " §fが §b" + damageCause + " §fを使用して §c" + p.getName() + " §fを撃破!";
+                                    new BukkitRunnable() {
+                                        @Override
+                                        public void run() {
+                                            damagerPlayer.sendTitle("", "§7§o" + p.getName() + " を撃破!", 2, 20, 2);
+                                        }
+                                    }.runTaskLater(BattleRoyale.getPlugin(), 5L);
                                 }
-                            }.runTaskLater(BattleRoyale.getPlugin(), 5L);
+                            }
                         }
+                        PlayerDeathEvent playerDeathEvent = new PlayerDeathEvent(p, new ArrayList<>(), 0, deathMessage);
+                        Bukkit.getServer().getPluginManager().callEvent(playerDeathEvent);
                     }
-                }
+                }.runTask(BattleRoyale.getPlugin());
                 return;
             }
         }
