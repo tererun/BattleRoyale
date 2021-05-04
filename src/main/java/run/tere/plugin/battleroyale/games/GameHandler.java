@@ -10,6 +10,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import run.tere.plugin.battleroyale.BattleRoyale;
+import run.tere.plugin.battleroyale.apis.PlayerAPI;
 import run.tere.plugin.battleroyale.areas.AreaHandler;
 import run.tere.plugin.battleroyale.areas.AreaScheduler;
 import run.tere.plugin.battleroyale.guns.GunHandler;
@@ -33,6 +34,16 @@ public class GameHandler {
         this.gunHandler = new GunHandler();
         this.areaHandler = new AreaHandler(Bukkit.getWorld("world"));
         this.ammoHandler = new AmmoHandler();
+        Bukkit.getServer().getPluginManager().registerEvents(new GameCheckListenerClass(), BattleRoyale.getPlugin());
+    }
+
+    public void resetWorldBorder() {
+        WorldBorder worldBorder = areaHandler.getWorldBorder();
+        BukkitRunnable moveRunnable = areaHandler.getMoveRunnable();
+        if (!moveRunnable.isCancelled()) moveRunnable.cancel();
+        if (!areaScheduler.isCancelled()) areaScheduler.cancel();
+        worldBorder.setCenter(65, -236);
+        worldBorder.setSize(1500);
     }
 
     public void setItemSpawnHandler(ItemSpawnHandler itemSpawnHandler) {
@@ -45,12 +56,10 @@ public class GameHandler {
 
     private void prepareGame() {
         Team team = prepareTeam();
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.getInventory().clear();
-            player.setGameMode(GameMode.ADVENTURE);
-            player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 99999, 255, false, false, false));
-            team.addEntry(player.getName());
-        }
+        PlayerAPI.clearInventory();
+        PlayerAPI.setGameMode(GameMode.ADVENTURE);
+        PlayerAPI.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 99999, 255, false, false, false));
+        PlayerAPI.teamAddEntry(team);
         preparePigTrain();
         spawnItems();
         areaScheduler = new AreaScheduler();
@@ -138,6 +147,11 @@ public class GameHandler {
 
     private void spawnPigTrains() {
         World world = this.pigTrainStartLocation.getWorld();
+        for (Entity entity : world.getEntities()) {
+            if (entity.getScoreboardTags().contains("pigtrain")) {
+                entity.remove();
+            }
+        }
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.teleport(pigTrainStartLocation);
             Pig pig = world.spawn(pigTrainStartLocation, Pig.class, pigTrain -> {
@@ -153,6 +167,7 @@ public class GameHandler {
     }
 
     public void movePigTrans() {
+        System.out.println("pig detect!");
         for (Pig pig : pigTrains) {
             new BukkitRunnable() {
                 @Override

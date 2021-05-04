@@ -53,10 +53,7 @@ public class ReloadTask {
                     }
                 }
                 gun.setReloading(false);
-                Gson gson = new Gson();
                 ItemStack itemStack = itemStackWithSlot.getItemStack();
-                itemStack = NBTEditor.set(itemStack, gson.toJson(gun), "Gun");
-
                 inventory.setItem(ignoreIndex, itemStack);
                 getPlayerByUUID().getWorld().playSound(getPlayerByUUID().getLocation(), Sound.BLOCK_IRON_DOOR_CLOSE, 1F, 0.75F);
                 getPlayerByUUID().sendMessage("§a§oリロードが完了しました");
@@ -76,15 +73,9 @@ public class ReloadTask {
     public void cancel() {
         this.bukkitRunnable.cancel();
         Player player = getPlayerByUUID();
-        Gson gson = new Gson();
-        ItemStackWithSlot itemStackWithSlot = GunUtils.getGunFromInventory(player.getInventory(), gun);
-        ItemStack itemStack = itemStackWithSlot.getItemStack();
-        int slot = itemStackWithSlot.getSlot();
         gun.setReloading(false);
-        itemStack = NBTEditor.set(itemStack, gson.toJson(gun), "Gun");
         player.sendMessage("§c§oリロードがキャンセルされました");
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_PISTON_CONTRACT, 1F, 1F);
-        player.getInventory().setItem(slot, itemStack);
         BattleRoyale.getGameHandler().getGunHandler().getReloadHandler().getReloadTasks().remove(this);
     }
 

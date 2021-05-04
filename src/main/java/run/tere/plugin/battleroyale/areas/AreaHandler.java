@@ -17,15 +17,21 @@ public class AreaHandler {
     private Location nextLocation;
     private double moveX;
     private double moveZ;
+    private BukkitRunnable moveRunnable;
 
     public AreaHandler(World world) {
         this.worldUUID = world.getUID();
+        WorldBorder worldBorder = getWorldBorder();
+        worldBorder.setCenter(65, -236);
+        worldBorder.setSize(1500);
+        worldBorder.setDamageBuffer(0);
     }
 
-    public void move(double nextSize, long seconds) {
+    public void move(double nextSize, long seconds, double damage) {
         AreaHandler areaHandler = BattleRoyale.getGameHandler().getAreaHandler();
+        areaHandler.getWorldBorder().setDamageAmount(damage);
         areaHandler.nextArea(nextSize, seconds, 20L);
-        new BukkitRunnable() {
+        moveRunnable = new BukkitRunnable() {
             @Override
             public void run() {
                 if (areaHandler.getNextLocation().distance(areaHandler.getWorldBorder().getCenter()) < 0.01) {
@@ -35,7 +41,8 @@ public class AreaHandler {
                 }
                 areaHandler.moveArea();
             }
-        }.runTaskTimer(BattleRoyale.getPlugin(), 0L, 1L);
+        };
+        moveRunnable.runTaskTimer(BattleRoyale.getPlugin(), 0L, 1L);
     }
 
     public void moveArea() {
@@ -108,5 +115,9 @@ public class AreaHandler {
 
     public void setMoveZ(double moveZ) {
         this.moveZ = moveZ;
+    }
+
+    public BukkitRunnable getMoveRunnable() {
+        return moveRunnable;
     }
 }

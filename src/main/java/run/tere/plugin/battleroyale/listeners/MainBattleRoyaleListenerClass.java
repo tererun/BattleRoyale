@@ -1,5 +1,6 @@
 package run.tere.plugin.battleroyale.listeners;
 
+import com.google.gson.Gson;
 import io.github.bananapuncher714.nbteditor.NBTEditor;
 import org.bukkit.*;
 import org.bukkit.entity.*;
@@ -7,31 +8,47 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.spigotmc.event.entity.EntityDismountEvent;
 import run.tere.plugin.battleroyale.BattleRoyale;
 import run.tere.plugin.battleroyale.apis.GlowAPI;
+import run.tere.plugin.battleroyale.apis.GunUtils;
 import run.tere.plugin.battleroyale.consts.SelectEntity;
+import run.tere.plugin.battleroyale.guns.Gun;
 
 import java.util.HashSet;
 import java.util.UUID;
 
 public class MainBattleRoyaleListenerClass implements Listener {
+
+    private static HashSet<UUID> movingChecker = new HashSet<>();
     @EventHandler
     public void onPlayerToggleSneak(PlayerToggleSneakEvent e) {
         Player player = e.getPlayer();
         if (!e.isSneaking()) return;
         if (!player.isOnGround()) return;
         if (!player.isSprinting()) return;
+        if (movingChecker.contains(player.getUniqueId())) return;
         player.setVelocity(player.getVelocity().clone().add(player.getLocation().getDirection().clone()).setY(0));
+        movingChecker.add(player.getUniqueId());
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                movingChecker.remove(player.getUniqueId());
+            }
+        }.runTaskLater(BattleRoyale.getPlugin(), 20L);
         final int[] i = {0};
         new BukkitRunnable() {
             @Override
@@ -87,6 +104,11 @@ public class MainBattleRoyaleListenerClass implements Listener {
             player.getInventory().setChestplate(new ItemStack(Material.AIR));
             player.getInventory().setItem(8, new ItemStack(Material.COOKED_BEEF, 64));
             player.getInventory().setItem(7, new ItemStack(Material.COMPASS, 1));
+            ItemStack healItem = new ItemStack(Material.SPLASH_POTION, 1);
+            PotionMeta healMeta = (PotionMeta) healItem.getItemMeta();
+            healMeta.addCustomEffect(new PotionEffect(PotionEffectType.HEAL, 10, 3, false, false, false), true);
+            healItem.setItemMeta(healMeta);
+            player.getInventory().setItem(6, healItem);
             player.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
         }
     }
@@ -113,10 +135,42 @@ public class MainBattleRoyaleListenerClass implements Listener {
         if (equipmentSlot == null) return;
         ItemStack helmet = equipmentSlot.getHelmet();
         if (helmet == null) return;
-        player.getInventory().addItem(helmet);
-        equipmentSlot.setHelmet(new ItemStack(Material.AIR));
-        armorStand.remove();
-        player.getWorld().playSound(player.getLocation(), Sound.ITEM_ARMOR_EQUIP_CHAIN, 1F, 1F);
+        Inventory inventory = player.getInventory();
+        if (NBTEditor.contains(helmet, "GunId")) {
+            if (GunUtils.getGunSize(player.getInventory()) >= 2) {
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1F, 1F);
+                player.sendMessage("§c銃は二個以上持てません");
+                return;
+            }
+            if (inventory.getItem(0) == null) {
+                inventory.setItem(0, helmet);
+            } else if (inventory.getItem(1) == null) {
+                inventory.setItem(1, helmet);
+            }
+            equipmentSlot.setHelmet(new ItemStack(Material.AIR));
+            armorStand.remove();
+            player.getWorld().playSound(player.getLocation(), Sound.ITEM_ARMOR_EQUIP_CHAIN, 1F, 1F);
+        } else {
+            if (inventory.firstEmpty() <= 1) {
+                for (int i=2; i<inventory.getSize(); i++) {
+                    if (inventory.getItem(i) == null) {
+                        inventory.setItem(i, helmet);
+                        break;
+                    }
+                }
+            } else {
+                inventory.addItem(helmet);
+            }
+            equipmentSlot.setHelmet(new ItemStack(Material.AIR));
+            armorStand.remove();
+            player.getWorld().playSound(player.getLocation(), Sound.ITEM_ARMOR_EQUIP_CHAIN, 1F, 1F);
+        }
+
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent e) {
+        e.getPlayer().setGameMode(GameMode.SPECTATOR);
     }
 
     @EventHandler
@@ -140,6 +194,11 @@ public class MainBattleRoyaleListenerClass implements Listener {
         }
         GlowAPI.setGlowing(armorStand, player, true);
         selectEntities.add(new SelectEntity(player, armorStand));
+    }
+
+    @EventHandler
+    public void onFoodLevelChange(FoodLevelChangeEvent e) {
+        e.setFoodLevel(20);
     }
 
     private void removeSelectEntity(Player player) {
@@ -177,6 +236,11 @@ public class MainBattleRoyaleListenerClass implements Listener {
     }
 
     @EventHandler
+    public void onEntityRegainHealth(EntityRegainHealthEvent e) {
+        if (e.getRegainReason().equals(EntityRegainHealthEvent.RegainReason.EATING)) e.setCancelled(true);
+    }
+
+    @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         Player player = (Player) e.getWhoClicked();
         Inventory clickedInventory = e.getClickedInventory();
@@ -186,6 +250,14 @@ public class MainBattleRoyaleListenerClass implements Listener {
         if (clickedItem == null) return;
         e.setCancelled(true);
         if (clickedItem.getType().equals(Material.BARRIER)) return;
+        if (NBTEditor.contains(clickedItem, "GunId")) {
+            Gun gun = BattleRoyale.getGameHandler().getGunHandler().getActiveGunFromUUID(UUID.fromString(NBTEditor.getString(clickedItem, "GunId")));
+            if (gun.isReloading()) {
+                player.sendMessage("§cリロード中は銃を投げることができません!");
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1F, 1F);
+                return;
+            }
+        }
         if (player.getInventory().equals(clickedInventory)) {
             if (e.isShiftClick()) {
                 int amount = clickedItem.getAmount() / 2;
@@ -280,8 +352,16 @@ public class MainBattleRoyaleListenerClass implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
-        e.getEntity().getInventory().clear();
-        e.getEntity().setGameMode(GameMode.SPECTATOR);
+        Player player = e.getEntity();
+        player.setHealth(20);
+        player.getInventory().clear();
+        player.setGameMode(GameMode.SPECTATOR);
+        EntityDamageEvent entityDamageEvent = player.getLastDamageCause();
+        if (entityDamageEvent != null) {
+            if (entityDamageEvent.getCause().equals(EntityDamageEvent.DamageCause.SUFFOCATION)) {
+                e.setDeathMessage("§c" + player.getName() + " §fは §aエリア収縮 §fで撃破されました!");
+            }
+        }
     }
 
     @EventHandler

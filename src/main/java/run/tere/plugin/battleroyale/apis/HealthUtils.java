@@ -50,6 +50,7 @@ public class HealthUtils {
                         }
                         PlayerDeathEvent playerDeathEvent = new PlayerDeathEvent(p, new ArrayList<>(), 0, deathMessage);
                         Bukkit.getServer().getPluginManager().callEvent(playerDeathEvent);
+                        Bukkit.broadcastMessage(deathMessage);
                     }
                 }.runTask(BattleRoyale.getPlugin());
                 return;

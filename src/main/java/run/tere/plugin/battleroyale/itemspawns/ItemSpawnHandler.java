@@ -8,6 +8,7 @@ import run.tere.plugin.battleroyale.BattleRoyale;
 import run.tere.plugin.battleroyale.apis.AmmoUtils;
 import run.tere.plugin.battleroyale.apis.GunUtils;
 import run.tere.plugin.battleroyale.guns.Gun;
+import run.tere.plugin.battleroyale.guns.GunTemplate;
 import run.tere.plugin.battleroyale.guns.ammos.AmmoType;
 
 import java.util.ArrayList;
@@ -23,7 +24,8 @@ public class ItemSpawnHandler {
     }
 
     private void registerItemSpawns() {
-        for (Gun gun : BattleRoyale.getGameHandler().getGunHandler().getGunList().getGuns()) {
+        for (GunTemplate gunTemplate : BattleRoyale.getGameHandler().getGunHandler().getGunList().getGuns()) {
+            Gun gun = GunUtils.createGun(gunTemplate);
             ItemStack gunStack = GunUtils.getGunStack(gun);
             ItemStack ammoOne = AmmoUtils.getAmmoStack(gun.getAmmoType(), gun.getAmmoType().getDefaultGiveAmount());
             ItemStack ammoTwo = AmmoUtils.getAmmoStack(gun.getAmmoType(), gun.getAmmoType().getDefaultGiveAmount());

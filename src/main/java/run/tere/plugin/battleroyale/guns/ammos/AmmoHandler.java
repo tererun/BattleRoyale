@@ -71,6 +71,7 @@ public class AmmoHandler extends TimerTask {
 
             for (Player livingEntity : Bukkit.getOnlinePlayers()) {
                 if (livingEntity.getBoundingBox().contains(nowLocation.getX(), nowLocation.getY(), nowLocation.getZ())) {
+                    if (livingEntity.getUniqueId().equals(ammo.getUUID())) continue;
                     OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
                     Player player = offlinePlayer.getPlayer();
                     double headDistance = livingEntity.getLocation().clone().add(0, livingEntity.getEyeHeight(), 0).distance(nowLocation);

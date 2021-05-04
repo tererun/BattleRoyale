@@ -15,6 +15,7 @@ import run.tere.plugin.battleroyale.apis.AmmoUtils;
 import run.tere.plugin.battleroyale.apis.GunUtils;
 import run.tere.plugin.battleroyale.areas.AreaHandler;
 import run.tere.plugin.battleroyale.guns.Gun;
+import run.tere.plugin.battleroyale.guns.GunTemplate;
 import run.tere.plugin.battleroyale.guns.ammos.Ammo;
 import run.tere.plugin.battleroyale.guns.ammos.AmmoType;
 
@@ -29,7 +30,8 @@ public class MainBattleRoyaleCommandsClass implements CommandExecutor {
         if (!command.getName().equalsIgnoreCase("battleroyale")) return true;
         if (args.length == 0) {
             Player player = (Player) sender;
-            for (Gun gun : BattleRoyale.getGameHandler().getGunHandler().getGunList().getGuns()) {
+            for (GunTemplate gunTemplate : BattleRoyale.getGameHandler().getGunHandler().getGunList().getGuns()) {
+                Gun gun = GunUtils.createGun(gunTemplate);
                 ItemStack itemStack = GunUtils.getGunStack(gun);
                 player.getInventory().addItem(itemStack);
             }

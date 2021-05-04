@@ -34,13 +34,42 @@ import java.util.*;
 
 public class GunHandler implements Listener {
 
+    private HashSet<Gun> activeGuns;
     private GunList gunList;
     private ReloadHandler reloadHandler;
 
     public GunHandler() {
+        this.activeGuns = new HashSet<>();
         this.gunList = new GunList();
         this.reloadHandler = new ReloadHandler();
         Bukkit.getServer().getPluginManager().registerEvents(this, BattleRoyale.getPlugin());
+    }
+
+    public void addActiveGun(Gun gun) {
+        this.activeGuns.add(gun);
+    }
+
+    public void removeActiveGun(Gun gun) {
+        this.activeGuns.remove(gun);
+    }
+
+    public Gun getActiveGunFromUUID(UUID uuid) {
+        for (Gun gun : this.activeGuns) {
+            if (gun.getUUID().equals(uuid)) return gun;
+        }
+        return null;
+    }
+
+    public boolean containsActiveGunFromUUID(UUID uuid) {
+        return (this.getActiveGunFromUUID(uuid) != null);
+    }
+
+    public boolean containsActiveGun(Gun gun) {
+        return this.activeGuns.contains(gun);
+    }
+
+    public HashSet<Gun> getActiveGuns() {
+        return activeGuns;
     }
 
     @EventHandler
@@ -51,9 +80,8 @@ public class GunHandler implements Listener {
         int slot = player.getInventory().getHeldItemSlot();
         ItemStack itemStack = inventory.getItem(slot);
         if (itemStack == null) return;
-        if (!NBTEditor.contains(itemStack, "Gun")) return;
-        Gson gson = new Gson();
-        Gun gun = gson.fromJson(NBTEditor.getString(itemStack, "Gun"), Gun.class);
+        if (!NBTEditor.contains(itemStack, "GunId")) return;
+        Gun gun = getActiveGunFromUUID(UUID.fromString(NBTEditor.getString(itemStack, "GunId")));
         ItemMeta itemMeta = itemStack.getItemMeta();
         Action action = e.getAction();
         if ((action.equals(Action.LEFT_CLICK_AIR)) || (action.equals(Action.LEFT_CLICK_BLOCK))) {
@@ -77,16 +105,18 @@ public class GunHandler implements Listener {
                 itemStack.setItemMeta(itemMeta);
             }
         } else if ((action.equals(Action.RIGHT_CLICK_AIR)) || (action.equals(Action.RIGHT_CLICK_BLOCK))) {
-            if (gun.isLaunched()) return;
+            if (gun.isLaunched()) {
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1F, 1F);
+                return;
+            }
             if (gun.isReloading()) return;
             gun.setLaunched(true);
-            itemStack = NBTEditor.set(itemStack, gson.toJson(gun), "Gun");
             inventory.setItem(slot, itemStack);
             Timer timer = new Timer();
             if (gun.getLaunchRate() < 0) {
                 TimerTask timerTask = new SingleGunLaunch(player, gun, inventory, slot, itemStack);
                 timer.schedule(timerTask, -gun.getLaunchRate());
-                launch(player, gun, itemStack, inventory, timerTask, gson, slot);
+                launch(player, gun, itemStack, inventory, timerTask, slot);
             } else {
                 TimerTask timerTask = new GunLaunch(player, gun, inventory, slot, itemStack);
                 timer.schedule(timerTask, 0L, gun.getLaunchRate());
@@ -94,21 +124,18 @@ public class GunHandler implements Listener {
         }
     }
 
-    private void autoLaunch(Player player, Gun gun, ItemStack itemStack, Inventory inventory, TimerTask timerTask, Gson gson, int slot) {
+    private void autoLaunch(Player player, Gun gun, ItemStack itemStack, Inventory inventory, TimerTask timerTask, int slot) {
         if ((!player.isHandRaised())) {
             gun.setLaunched(false);
-            itemStack = NBTEditor.set(itemStack, gson.toJson(gun), "Gun");
-            inventory.setItem(slot, itemStack);
             timerTask.cancel();
             return;
         }
-        launch(player, gun, itemStack, inventory, timerTask, gson, slot);
+        launch(player, gun, itemStack, inventory, timerTask, slot);
     }
 
-    private void launch(Player player, Gun gun, ItemStack itemStack, Inventory inventory, TimerTask timerTask, Gson gson, int slot) {
+    private void launch(Player player, Gun gun, ItemStack itemStack, Inventory inventory, TimerTask timerTask, int slot) {
         if (gun.isReloading()) {
             gun.setLaunched(false);
-            itemStack = NBTEditor.set(itemStack, gson.toJson(gun), "Gun");
             ItemMeta itemMeta = itemStack.getItemMeta();
             itemMeta.setCustomModelData(gun.getCustomModelData());
             itemMeta.removeAttributeModifier(Attribute.GENERIC_MOVEMENT_SPEED);
@@ -123,7 +150,7 @@ public class GunHandler implements Listener {
             return;
         }
         new Ammo(player.getUniqueId(), gun.getGunName(), gun.getAmmoType(), gun.getDamage(), gun.getHeadShotDamageMagnification(), gun.getFlyingDistance(), player.getEyeLocation().clone(), gun.getAmmoSpeed());
-        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 3.125F, 1F);
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 4F, 1F);
         float sideRecoil = gun.getSideRecoil();
         float verticalRecoil = -gun.getVerticalRecoil();
         if (itemStack.getItemMeta().getCustomModelData() == gun.getCustomModelData()) {
@@ -133,12 +160,10 @@ public class GunHandler implements Listener {
         sendRecoilPacket(player, sideRecoil, verticalRecoil);
         gun.addNowAmmo(-1);
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(gun.getNowAmmo() + "/" + gun.getMaxAmmo()));
-        itemStack = NBTEditor.set(itemStack, gson.toJson(gun), "Gun");
         inventory.setItem(slot, itemStack);
     }
 
     public class SingleGunLaunch extends TimerTask {
-        private Gson gson;
         private Player player;
         private Gun gun;
         private Inventory inventory;
@@ -146,7 +171,6 @@ public class GunHandler implements Listener {
         private ItemStack itemStack;
 
         public SingleGunLaunch(Player player, Gun gun, Inventory inventory, int slot, ItemStack itemStack) {
-            this.gson = new Gson();
             this.player = player;
             this.gun = gun;
             this.inventory = inventory;
@@ -156,15 +180,11 @@ public class GunHandler implements Listener {
 
         @Override
         public void run() {
-            gun = GunUtils.getGunFromUUID(player.getInventory(), gun.getUUID());
             gun.setLaunched(false);
-            itemStack = NBTEditor.set(itemStack, gson.toJson(gun), "Gun");
-            inventory.setItem(slot, itemStack);
         }
     }
 
     public class GunLaunch extends TimerTask {
-        private Gson gson;
         private Player player;
         private Gun gun;
         private Inventory inventory;
@@ -172,7 +192,6 @@ public class GunHandler implements Listener {
         private ItemStack itemStack;
 
         public GunLaunch(Player player, Gun gun, Inventory inventory, int slot, ItemStack itemStack) {
-            this.gson = new Gson();
             this.player = player;
             this.gun = gun;
             this.inventory = inventory;
@@ -182,8 +201,7 @@ public class GunHandler implements Listener {
 
         @Override
         public void run() {
-            gun = GunUtils.getGunFromUUID(player.getInventory(), gun.getUUID());
-            autoLaunch(player, gun, itemStack, inventory, this, gson, slot);
+            autoLaunch(player, gun, itemStack, inventory, this, slot);
         }
     }
 
@@ -194,11 +212,10 @@ public class GunHandler implements Listener {
         Player player = e.getPlayer();
         Inventory inventory = player.getInventory();
         ItemStack dropItem = e.getItemDrop().getItemStack();
-        if (!NBTEditor.contains(dropItem, "Gun")) return;
+        if (!NBTEditor.contains(dropItem, "GunId")) return;
         e.setCancelled(true);
         reloadingCancelInteractSet.add(player.getUniqueId());
-        Gson gson = new Gson();
-        Gun gun = gson.fromJson(NBTEditor.getString(dropItem, "Gun"), Gun.class);
+        Gun gun = getActiveGunFromUUID(UUID.fromString(NBTEditor.getString(dropItem, "GunId")));
         ItemMeta dropMeta = dropItem.getItemMeta();
         int gunCustomModelData = gun.getCustomModelData();
         if (dropMeta.getCustomModelData() != gunCustomModelData) {
@@ -211,27 +228,19 @@ public class GunHandler implements Listener {
         int inventoryAmmoAmount = AmmoUtils.getAmmoAmount(inventory, ammoType);
         if (inventoryAmmoAmount <= 0) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("§cインベントリに弾薬がありません"));
-            dropItem = NBTEditor.set(dropItem, gson.toJson(gun), "Gun");
-            e.getItemDrop().setItemStack(dropItem);
             return;
         }
         if (gun.isReloading()) {
             player.sendMessage("§c§oリロード中です");
-            dropItem = NBTEditor.set(dropItem, gson.toJson(gun), "Gun");
-            e.getItemDrop().setItemStack(dropItem);
             return;
         }
         if (gun.getNowAmmo() == gun.getMaxAmmo()) {
             player.sendMessage("§c§oマガジンが満タンです");
-            dropItem = NBTEditor.set(dropItem, gson.toJson(gun), "Gun");
-            e.getItemDrop().setItemStack(dropItem);
             return;
         }
         player.sendMessage("§7§oリロードします...");
         player.playSound(player.getLocation(), Sound.ENTITY_SHEEP_SHEAR, 1F, 0.5F);
         gun.setReloading(true);
-        dropItem = NBTEditor.set(dropItem, gson.toJson(gun), "Gun");
-        e.getItemDrop().setItemStack(dropItem);
         reloadHandler.getReloadTasks().add(new ReloadTask(player.getUniqueId(), gun));
     }
 
@@ -240,14 +249,19 @@ public class GunHandler implements Listener {
         Player player = e.getPlayer();
         ItemStack fromItem = player.getInventory().getItem(e.getPreviousSlot());
         if (fromItem == null) return;
-        if (!NBTEditor.contains(fromItem, "Gun")) return;
-        Gson gson = new Gson();
-        Gun gun = gson.fromJson(NBTEditor.getString(fromItem, "Gun"), Gun.class);
+        if (!NBTEditor.contains(fromItem, "GunId")) return;
+        Gun gun = getActiveGunFromUUID(UUID.fromString(NBTEditor.getString(fromItem, "GunId")));
+        ItemMeta fromMeta = fromItem.getItemMeta();
+        int customModelData = gun.getCustomModelData();
         if (gun.isReloading()) {
             ReloadTask reloadTask = reloadHandler.getReloadTaskByUUID(player.getUniqueId());
             if (reloadTask != null) {
                 reloadTask.cancel();
             }
+        }
+        if (fromMeta.getCustomModelData() != customModelData) {
+            fromMeta.setCustomModelData(customModelData);
+            fromItem.setItemMeta(fromMeta);
         }
     }
 
