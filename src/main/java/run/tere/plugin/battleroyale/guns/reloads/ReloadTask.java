@@ -76,6 +76,7 @@ public class ReloadTask {
         gun.setReloading(false);
         player.sendMessage("§c§oリロードがキャンセルされました");
         player.getWorld().playSound(player.getLocation(), Sound.BLOCK_PISTON_CONTRACT, 1F, 1F);
+        this.bukkitRunnable.cancel();
         BattleRoyale.getGameHandler().getGunHandler().getReloadHandler().getReloadTasks().remove(this);
     }
 
