@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import run.tere.plugin.battleroyale.BattleRoyale;
 import run.tere.plugin.battleroyale.apis.AmmoUtils;
 import run.tere.plugin.battleroyale.apis.GunUtils;
+import run.tere.plugin.battleroyale.apis.JsonAPI;
 import run.tere.plugin.battleroyale.guns.Gun;
 import run.tere.plugin.battleroyale.guns.GunTemplate;
 import run.tere.plugin.battleroyale.guns.ammos.AmmoType;
@@ -17,8 +18,10 @@ import java.util.Random;
 
 public class ItemSpawnHandler {
     private List<ItemSpawn> itemSpawnList;
+    private ItemSpawnLocationHandler itemSpawnLocationHandler;
 
     public ItemSpawnHandler() {
+        this.itemSpawnLocationHandler = JsonAPI.loadItemSpawnLocationHandler();
         this.itemSpawnList = new ArrayList<>();
         this.registerItemSpawns();
     }
@@ -58,5 +61,9 @@ public class ItemSpawnHandler {
                 as.getEquipment().setHelmet(itemStack.clone());
             });
         }
+    }
+
+    public ItemSpawnLocationHandler getItemSpawnLocationHandler() {
+        return itemSpawnLocationHandler;
     }
 }

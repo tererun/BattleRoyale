@@ -25,8 +25,10 @@ import org.spigotmc.event.entity.EntityDismountEvent;
 import run.tere.plugin.battleroyale.BattleRoyale;
 import run.tere.plugin.battleroyale.apis.GlowAPI;
 import run.tere.plugin.battleroyale.apis.GunUtils;
+import run.tere.plugin.battleroyale.apis.JsonAPI;
 import run.tere.plugin.battleroyale.consts.SelectEntity;
 import run.tere.plugin.battleroyale.guns.Gun;
+import run.tere.plugin.battleroyale.itemspawns.ItemSpawnLocationHandler;
 
 import java.util.HashSet;
 import java.util.UUID;
@@ -282,13 +284,9 @@ public class MainBattleRoyaleListenerClass implements Listener {
         ItemStack itemStack = e.getItemInHand();
         if (!NBTEditor.contains(itemStack, "SpawnTriggerItem")) return;
         e.setCancelled(true);
-        e.getBlock().getWorld().spawn(spawnLocation, ArmorStand.class, as -> {
-            as.setSilent(true);
-            as.setInvisible(true);
-            as.setSmall(true);
-            as.setRemoveWhenFarAway(false);
-            as.addScoreboardTag("item_spawn_trigger");
-        });
+        ItemSpawnLocationHandler itemSpawnLocationHandler = BattleRoyale.getGameHandler().getItemSpawnHandler().getItemSpawnLocationHandler();
+        itemSpawnLocationHandler.getItemSpawnBukkitLocations().add(spawnLocation);
+        JsonAPI.saveItemSpawnLocationHandler(itemSpawnLocationHandler);
     }
 
     @EventHandler
@@ -296,8 +294,8 @@ public class MainBattleRoyaleListenerClass implements Listener {
         Player player = e.getPlayer();
         ItemStack itemStack = player.getInventory().getItemInMainHand();
         if (!NBTEditor.contains(itemStack, "SpawnTriggerItem")) return;
-        for (Entity entity : player.getNearbyEntities(15, 15, 15)) {
-            if (entity.getScoreboardTags().contains("item_spawn_trigger")) e.getPlayer().spawnParticle(Particle.END_ROD, entity.getLocation().clone().add(0, 0.5, 0), 20, 0, 0.5, 0, 0);
+        for (Location location : BattleRoyale.getGameHandler().getItemSpawnHandler().getItemSpawnLocationHandler().getItemSpawnBukkitLocations()) {
+            if (location.distance(player.getLocation()) <= 10) e.getPlayer().spawnParticle(Particle.END_ROD, location.clone().add(0, 0.5, 0), 20, 0, 0.5, 0, 0);
         }
     }
 
