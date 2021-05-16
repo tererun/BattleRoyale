@@ -16,6 +16,7 @@ import run.tere.plugin.battleroyale.areas.AreaScheduler;
 import run.tere.plugin.battleroyale.guns.GunHandler;
 import run.tere.plugin.battleroyale.guns.ammos.AmmoHandler;
 import run.tere.plugin.battleroyale.itemspawns.ItemSpawnHandler;
+import run.tere.plugin.battleroyale.minimaps.MinimapHandler;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -29,11 +30,13 @@ public class GameHandler {
     private AmmoHandler ammoHandler;
     private GunHandler gunHandler;
     private ItemSpawnHandler itemSpawnHandler;
+    private MinimapHandler minimapHandler;
 
     public GameHandler() {
         this.gunHandler = new GunHandler();
         this.areaHandler = new AreaHandler(Bukkit.getWorld("world"));
         this.ammoHandler = new AmmoHandler();
+        this.minimapHandler = new MinimapHandler();
         Bukkit.getServer().getPluginManager().registerEvents(new GameCheckListenerClass(), BattleRoyale.getPlugin());
     }
 
@@ -96,12 +99,9 @@ public class GameHandler {
             }
         }
         Random random = new Random();
-        for (Entity entity : world.getEntities()) {
-            if (entity.getScoreboardTags().contains("item_spawn_trigger")) {
-                entity.setInvulnerable(true);
-                if (random.nextInt(10) == 9) continue;
-                itemSpawnHandler.spawnItems(entity.getLocation(), itemSpawnHandler.getRandomItemSpawn());
-            }
+        for (Location location : itemSpawnHandler.getItemSpawnLocationHandler().getItemSpawnBukkitLocations()) {
+            if (random.nextInt(10) == 9) continue;
+            itemSpawnHandler.spawnItems(location.clone(), itemSpawnHandler.getRandomItemSpawn());
         }
     }
 
@@ -235,5 +235,9 @@ public class GameHandler {
 
     public AmmoHandler getAmmoHandler() {
         return ammoHandler;
+    }
+
+    public MinimapHandler getMinimapHandler() {
+        return minimapHandler;
     }
 }
